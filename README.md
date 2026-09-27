@@ -51,8 +51,10 @@ seperti Mesa lavapipe kalau tidak ada GPU) dan harus ada di `PATH`.
   2. Kalau server tidak punya GPU, pasang driver Vulkan software:
      `sudo apt install mesa-vulkan-drivers libvulkan1`.
 - **Railway (Nixpacks):** repo ini sudah menyertakan `nixpacks.toml` yang
-  menambahkan paket Nix `realesrgan-ncnn-vulkan` dan `mesa` saat build,
-  jadi biasanya tidak perlu setup manual tambahan. Karena Railway tidak
+  menambahkan paket Nix `realesrgan-ncnn-vulkan` dan `mesa` saat build
+  (dan mengunci `nodejs_20` secara eksplisit di situ juga, karena
+  mendefinisikan `[phases.setup]` sendiri menonaktifkan deteksi Node.js
+  otomatis dari Nixpacks), jadi biasanya tidak perlu setup manual tambahan. Karena Railway tidak
   menyediakan GPU, prosesnya jalan lewat software rendering (Mesa) yang
   jauh lebih lambat dari GPU asli, dan pada sebagian container bisa saja
   tetap gagal menemukan device Vulkan — kalau itu terjadi, pesan error dari
