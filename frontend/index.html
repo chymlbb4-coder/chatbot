@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penautan Perangkat WhatsApp - Monochrome</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html, body {
+            width: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #ffffff;
+            color: #18181b;
+            overflow-x: hidden;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(16px) scale(0.98); }
+        }
+        .toast-in {
+            animation: toastIn 0.25s ease-out forwards;
+        }
+        .toast-out {
+            animation: toastOut 0.2s ease-in forwards;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes checkPop {
+            0% { opacity: 0; transform: scale(0.4); }
+            60% { opacity: 1; transform: scale(1.15); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes checkDraw {
+            from { stroke-dashoffset: 24; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes ringPulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+        .check-pop {
+            animation: checkPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .check-pop svg path,
+        .check-pop svg polyline {
+            stroke-dasharray: 24;
+            stroke-dashoffset: 24;
+            animation: checkDraw 0.4s ease-out 0.25s forwards;
+        }
+        .check-ring {
+            animation: ringPulse 1.2s ease-out infinite;
+        }
+    </style>
+</head>
+<body class="w-full min-h-[100dvh] flex flex-col bg-white antialiased selection:bg-black selection:text-white">
+
+    <div class="w-full min-h-[100dvh] bg-white flex flex-col">
+
+        <div id="navbar" class="flex items-center justify-between px-6 pt-6 border-b border-zinc-100 bg-zinc-50/50">
+            <div class="flex items-center gap-1">
+                <button id="tab-phone" onclick="switchTab('phone')" class="relative px-5 py-3 text-sm font-semibold text-black transition-all flex items-center gap-2 rounded-t-xl bg-white border-t border-x border-zinc-200">
+                    <svg class="w-4 h-4 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    <span>Tautkan Nomor</span>
+                </button>
+
+                <button id="tab-qr" onclick="switchTab('qr')" class="relative px-5 py-3 text-sm font-medium text-zinc-500 hover:text-black transition-all flex items-center gap-2 rounded-t-xl">
+                    <svg class="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="14" y1="14" x2="17" y2="14"></line><line x1="14" y1="17" x2="17" y2="17"></line><line x1="17" y1="14" x2="17" y2="17"></line><line x1="14" y1="14" x2="14" y2="21"></line><line x1="14" y1="21" x2="21" y2="21"></line><line x1="21" y1="14" x2="21" y2="21"></line></svg>
+                    <span>Tautkan QR</span>
+                </button>
+            </div>
+
+            <button onclick="logout()" class="px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-black transition-colors">
+                Keluar
+            </button>
+        </div>
+
+        <div id="status-bar" class="flex items-center gap-2 px-6 py-2.5 border-b border-zinc-100 bg-white">
+            <span id="status-dot" class="w-2 h-2 rounded-full bg-zinc-300"></span>
+            <span id="status-text" class="text-xs font-medium text-zinc-500">Memeriksa status koneksi...</span>
+        </div>
+
+        <div id="page-body" class="flex-1 min-h-0 w-full overflow-y-auto p-6 sm:p-8 lg:p-10 bg-white flex flex-col justify-center">
+
+            <div id="content-phone" class="space-y-6 fade-in">
+                <div class="space-y-2">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black">Input nomor telepon Anda</h1>
+                    <p class="text-zinc-500 text-sm leading-relaxed">
+                        Masukkan nomor telepon terdaftar untuk mendapatkan kode autentikasi.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-zinc-700 uppercase tracking-wider">Nomor HP</label>
+                        <div class="flex gap-2">
+                            <select id="country-code" class="border border-zinc-200 rounded-xl px-3.5 py-3.5 text-sm font-medium text-black bg-zinc-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all">
+                                <option value="+62">+62 (ID)</option>
+                                <option value="+1">+1 (US)</option>
+                                <option value="+44">+44 (UK)</option>
+                                <option value="+81">+81 (JP)</option>
+                            </select>
+                            <div class="relative flex-1">
+                                <input type="tel" id="phone-input" placeholder="812 3456 7890" class="w-full border border-zinc-200 rounded-xl px-4 py-3.5 text-sm text-black placeholder-zinc-400 bg-zinc-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all font-mono">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="generatePairingCode()" class="w-full bg-black hover:bg-zinc-800 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center active:scale-[0.99]">
+                        <span>Dapatkan kode</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="content-qr" class="space-y-6 hidden fade-in">
+                <div class="space-y-2 text-center sm:text-left">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black">Pindai Kode QR</h1>
+                    <p class="text-zinc-500 text-sm leading-relaxed">
+                        Arahkan pemindai di aplikasi WhatsApp Anda ke kode QR di bawah ini.
+                    </p>
+                </div>
+
+                <div class="flex flex-col items-center justify-center p-6 bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-2xl max-w-[220px] mx-auto">
+                    <div class="p-4 bg-white rounded-xl border border-zinc-200 shadow-md inline-flex items-center justify-center">
+                        <div id="qrcode" class="flex justify-center items-center" style="width:160px;height:160px;overflow:hidden;">
+                            <img id="qrcode-img" src="" alt="Kode QR" style="width:160px;height:160px;object-fit:contain;" class="hidden">
+                        </div>
+                    </div>
+                    <span class="text-xs text-zinc-400 mt-4 font-medium text-center">Diperbarui secara otomatis</span>
+                </div>
+            </div>
+
+            <div id="content-code" class="space-y-6 hidden fade-in">
+                <div class="space-y-2 text-center">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black">Masukkan Kode Ini</h1>
+                    <p class="text-zinc-500 text-sm leading-relaxed">
+                        Buka WhatsApp &rarr; Perangkat Tertaut &rarr; Tautkan dengan nomor telepon, lalu masukkan kode berikut.
+                    </p>
+                </div>
+
+                <div id="code-result-box" class="space-y-3 pt-2 fade-in">
+                    <span class="block text-xs font-bold text-zinc-500 text-center uppercase tracking-wider">Kode Verifikasi Anda</span>
+                    <div class="flex items-center justify-center gap-1.5">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c0">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c1">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c2">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c3">-</div>
+                        </div>
+
+                        <span class="text-zinc-400 font-mono font-bold text-xs mx-0.5">-</span>
+
+                        <div class="flex gap-1">
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c4">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c5">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c6">-</div>
+                            <div class="w-8 h-11 rounded-lg border border-zinc-300 bg-zinc-50 flex items-center justify-center font-mono font-bold text-black text-base shadow-sm" id="c7">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center justify-center gap-3 p-5 bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-2xl">
+                    <span id="pairing-code-text" class="font-mono font-bold text-lg tracking-[0.2em] text-black select-all">--------</span>
+                    <button type="button" onclick="copyPairingCode()" id="copy-code-btn" class="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-black border border-zinc-300 hover:border-black rounded-lg px-3 py-1.5 transition-all bg-white">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>Salin kode</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="content-connected" class="space-y-6 hidden fade-in text-center py-4">
+                <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <span class="check-ring absolute inset-0 rounded-full border-2 border-black"></span>
+                    <div class="check-pop w-16 h-16 rounded-full bg-black flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 12 9 18 20 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black">Berhasil Terhubung</h1>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Perangkat Anda sudah tertaut ke WhatsApp Web.</p>
+                </div>
+            </div>
+
+            <div id="content-failed" class="space-y-6 hidden fade-in text-center py-4">
+                <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <div class="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black">Gagal Tertaut ke WhatsApp</h1>
+                    <p class="text-zinc-500 text-sm leading-relaxed">
+                        WhatsApp menolak perangkat ini tepat setelah proses tautan. Sesi lama sudah dibersihkan otomatis. Silakan coba lagi.
+                    </p>
+                </div>
+                <button onclick="resetToStart()" class="w-full bg-black hover:bg-zinc-800 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center active:scale-[0.99]">
+                    <span>Coba Lagi</span>
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="toast-container" class="fixed inset-x-0 bottom-4 flex flex-col items-center gap-2 px-4 z-50 pointer-events-none"></div>
+
+    <script>
+        let qrDataTimer = null;
+        let statusTimer = null;
+
+        function switchTab(tab) {
+            const tabPhone = document.getElementById('tab-phone');
+            const tabQr = document.getElementById('tab-qr');
+            const contentPhone = document.getElementById('content-phone');
+            const contentQr = document.getElementById('content-qr');
+            const contentCode = document.getElementById('content-code');
+            const contentConnected = document.getElementById('content-connected');
+            const contentFailed = document.getElementById('content-failed');
+
+            contentCode.classList.add('hidden');
+            contentConnected.classList.add('hidden');
+            contentFailed.classList.add('hidden');
+
+            if (qrDataTimer) { clearInterval(qrDataTimer); qrDataTimer = null; }
+
+            if (tab === 'phone') {
+                tabPhone.className = "relative px-5 py-3 text-sm font-semibold text-black transition-all flex items-center gap-2 rounded-t-xl bg-white border-t border-x border-zinc-200";
+                tabQr.className = "relative px-5 py-3 text-sm font-medium text-zinc-500 hover:text-black transition-all flex items-center gap-2 rounded-t-xl";
+
+                contentPhone.classList.remove('hidden');
+                contentQr.classList.add('hidden');
+            } else {
+                tabQr.className = "relative px-5 py-3 text-sm font-semibold text-black transition-all flex items-center gap-2 rounded-t-xl bg-white border-t border-x border-zinc-200";
+                tabPhone.className = "relative px-5 py-3 text-sm font-medium text-zinc-500 hover:text-black transition-all flex items-center gap-2 rounded-t-xl";
+
+                contentQr.classList.remove('hidden');
+                contentPhone.classList.add('hidden');
+
+                fetch('/qr-start')
+                    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                    .then(({ ok, data }) => {
+                        if (!ok || !data.ok) {
+                            showToast(data.error || 'Gagal memulai QR.');
+                        }
+                    })
+                    .catch(() => {
+                        showToast('Gagal memulai QR.');
+                    });
+
+                renderMonochromeQR();
+                qrDataTimer = setInterval(renderMonochromeQR, 5000);
+                startStatusWatcher();
+            }
+        }
+
+        function generatePairingCode() {
+            const phoneInput = document.getElementById('phone-input').value.trim();
+
+            if (!phoneInput) {
+                showToast('Silakan masukkan nomor telepon terlebih dahulu.');
+                return;
+            }
+
+            const countryCode = document.getElementById('country-code').value.replace('+', '');
+            let localNumber = phoneInput.replace(/[^0-9]/g, '');
+            while (localNumber.startsWith('0')) {
+                localNumber = localNumber.slice(1);
+            }
+
+            if (localNumber.length < 8) {
+                showToast('Nomor telepon tidak valid. Masukkan nomor tanpa angka 0 di depan, contoh: 812 3456 7890.');
+                return;
+            }
+
+            const fullNumber = countryCode + localNumber;
+
+            fetch('/pair?number=' + encodeURIComponent(fullNumber))
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok || !data.ok) {
+                        showToast(data.error || 'Gagal meminta kode pairing.');
+                        return;
+                    }
+                    showToast('Kode pairing berhasil dibuat.', 'success');
+                    showPairingCode(data.code);
+                })
+                .catch(() => {
+                    showToast('Gagal meminta kode pairing.');
+                });
+        }
+
+        let currentPairingCode = '';
+
+        function showPairingCode(code) {
+            document.getElementById('content-phone').classList.add('hidden');
+            document.getElementById('content-code').classList.remove('hidden');
+
+            const clean = (code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+            currentPairingCode = clean;
+
+            for (let i = 0; i < 8; i++) {
+                const el = document.getElementById(`c${i}`);
+                el.innerText = '•';
+                el.classList.add('border-black', 'bg-white');
+
+                setTimeout(() => {
+                    el.innerText = clean[i] || '-';
+                    el.classList.remove('bg-white');
+                }, i * 80);
+            }
+
+            const textEl = document.getElementById('pairing-code-text');
+            if (textEl) {
+                textEl.innerText = clean ? (clean.slice(0, 4) + '-' + clean.slice(4, 8)) : '--------';
+            }
+
+            startStatusWatcher();
+        }
+
+        function copyPairingCode() {
+            if (!currentPairingCode) {
+                showToast('Kode pairing belum tersedia.');
+                return;
+            }
+
+            const finish = () => showToast('Kode berhasil disalin.', 'success');
+            const fail = () => showToast('Gagal menyalin kode, salin manual saja.');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentPairingCode).then(finish).catch(fail);
+            } else {
+                try {
+                    const tmp = document.createElement('textarea');
+                    tmp.value = currentPairingCode;
+                    tmp.style.position = 'fixed';
+                    tmp.style.opacity = '0';
+                    document.body.appendChild(tmp);
+                    tmp.focus();
+                    tmp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tmp);
+                    finish();
+                } catch (err) {
+                    fail();
+                }
+            }
+        }
+
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const iconSvg = type === 'success'
+                ? '<svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="9 12 11 14 15 10"></polyline></svg>'
+                : '<svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+            el.className = 'toast-in pointer-events-auto w-full max-w-sm bg-black text-white text-sm font-medium rounded-xl px-4 py-3 shadow-lg flex items-start gap-2 border border-zinc-800';
+            el.innerHTML = iconSvg + '<span>' + message + '</span>';
+            container.appendChild(el);
+
+            setTimeout(() => {
+                el.classList.remove('toast-in');
+                el.classList.add('toast-out');
+                setTimeout(() => el.remove(), 220);
+            }, 3200);
+        }
+
+        let hasShownConnected = false;
+
+        const statusMap = {
+            starting: { text: 'Memulai koneksi...', dot: 'bg-zinc-400 animate-pulse' },
+            qr_ready: { text: 'Menunggu kode QR dipindai', dot: 'bg-zinc-400 animate-pulse' },
+            pairing_ready: { text: 'Menunggu kode dimasukkan di HP', dot: 'bg-zinc-400 animate-pulse' },
+            connected: { text: 'Terhubung', dot: 'bg-black' },
+            disconnected: { text: 'Terputus, mencoba menyambung ulang...', dot: 'bg-zinc-500 animate-pulse' },
+            logged_out: { text: 'Keluar, perlu tautkan ulang', dot: 'bg-zinc-500' },
+            pairing_failed: { text: 'Gagal tertaut', dot: 'bg-zinc-500' },
+        };
+
+        function updateStatusBar(status) {
+            const info = statusMap[status] || { text: 'Belum terhubung', dot: 'bg-zinc-300' };
+            document.getElementById('status-text').innerText = info.text;
+            document.getElementById('status-dot').className = 'w-2 h-2 rounded-full ' + info.dot;
+        }
+
+        function showConnectedPage() {
+            document.getElementById('navbar').classList.add('hidden');
+            document.getElementById('content-phone').classList.add('hidden');
+            document.getElementById('content-qr').classList.add('hidden');
+            document.getElementById('content-code').classList.add('hidden');
+            document.getElementById('content-failed').classList.add('hidden');
+            document.getElementById('content-connected').classList.remove('hidden');
+            if (qrDataTimer) { clearInterval(qrDataTimer); qrDataTimer = null; }
+        }
+
+        function startStatusWatcher() {
+            if (statusTimer) return;
+
+            statusTimer = setInterval(() => {
+                fetch('/status')
+                    .then(res => {
+                        if (res.status === 401) {
+                            window.location.href = '/login';
+                            return null;
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (!data) return;
+                        updateStatusBar(data.status);
+
+                        if (data.status === 'connected') {
+                            hasShownConnected = true;
+                            showConnectedPage();
+                            return;
+                        }
+
+                        if (data.status === 'pairing_failed' || (hasShownConnected && (data.status === 'disconnected' || data.status === 'logged_out'))) {
+                            hasShownConnected = false;
+                            if (qrDataTimer) { clearInterval(qrDataTimer); qrDataTimer = null; }
+                            document.getElementById('navbar').classList.remove('hidden');
+                            document.getElementById('content-code').classList.add('hidden');
+                            document.getElementById('content-qr').classList.add('hidden');
+                            document.getElementById('content-connected').classList.add('hidden');
+                            document.getElementById('content-failed').classList.remove('hidden');
+                        }
+                    })
+                    .catch(() => {});
+            }, 2000);
+        }
+
+        startStatusWatcher();
+
+        function resetToStart() {
+            if (statusTimer) { clearInterval(statusTimer); statusTimer = null; }
+            if (qrDataTimer) { clearInterval(qrDataTimer); qrDataTimer = null; }
+            document.getElementById('content-failed').classList.add('hidden');
+            document.getElementById('content-connected').classList.add('hidden');
+            document.getElementById('content-code').classList.add('hidden');
+            document.getElementById('content-qr').classList.add('hidden');
+            document.getElementById('content-phone').classList.remove('hidden');
+            const phoneInput = document.getElementById('phone-input');
+            if (phoneInput) phoneInput.value = '';
+            currentPairingCode = '';
+        }
+
+        function renderMonochromeQR() {
+            fetch('/qr-data')
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = '/login';
+                        return null;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data) return;
+                    const img = document.getElementById('qrcode-img');
+                    if (!data.ok || !data.data) {
+                        img.classList.add('hidden');
+                        img.src = '';
+                        return;
+                    }
+                    img.src = '/qr?_=' + Date.now();
+                    img.classList.remove('hidden');
+                })
+                .catch(() => {});
+        }
+
+        function logout() {
+            fetch('/logout', { method: 'POST' })
+                .finally(() => {
+                    window.location.href = '/login';
+                });
+        }
+    </script>
+</body>
+</html>
