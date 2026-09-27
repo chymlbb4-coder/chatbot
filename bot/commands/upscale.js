@@ -1,5 +1,5 @@
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { upscaleImage } = require('../lib/deepai');
+const { upscaleImage } = require('../lib/realesrgan');
 const { getTargetImage } = require('../lib/mediaTarget');
 
 async function handler(ctx) {
@@ -35,6 +35,6 @@ async function handler(ctx) {
 module.exports = {
   name: 'upscale',
   aliases: ['hd', 'perbesar'],
-  description: 'Perbesar resolusi & pertajam gambar (DeepAI). Kirim/reply gambar dengan .upscale',
+  description: 'Perbesar resolusi & pertajam gambar (lokal, Real-ESRGAN). Kirim/reply gambar dengan .upscale',
   handler,
 };

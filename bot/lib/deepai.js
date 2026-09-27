@@ -2,10 +2,11 @@
 // "Machine Learning" pada repo https://github.com/public-apis/public-apis
 //
 // DeepAI gratis dipakai dengan API key (daftar gratis di deepai.org, dapat
-// jatah ratusan request/bulan tanpa biaya). Kita pakai 3 model-nya:
-//   - torch-srgan        -> upscale / perbesar resolusi gambar
-//   - waifu2x            -> upscale + halus ala-anime ("HD anime")
-//   - background-remover -> hapus background otomatis
+// jatah ratusan request/bulan tanpa biaya). Sekarang hanya dipakai untuk:
+//   - background-remover -> hapus background otomatis (.hapusbg)
+// Upscale (.upscale) dan HD anime (.animehd) sudah pindah ke Real-ESRGAN
+// lokal — lihat bot/lib/realesrgan.js — karena Real-ESRGAN tidak punya
+// model penghapus background.
 //
 // Tidak butuh library tambahan: pakai fetch/FormData/Blob bawaan Node.js 20+.
 
@@ -58,16 +59,8 @@ async function callDeepAiImageModel(model, buffer, filename = 'input.jpg') {
   return Buffer.from(arrayBuffer);
 }
 
-async function upscaleImage(buffer, filename) {
-  return callDeepAiImageModel('torch-srgan', buffer, filename);
-}
-
-async function animeHdImage(buffer, filename) {
-  return callDeepAiImageModel('waifu2x', buffer, filename);
-}
-
 async function removeBackgroundImage(buffer, filename) {
   return callDeepAiImageModel('background-remover', buffer, filename);
 }
 
-module.exports = { upscaleImage, animeHdImage, removeBackgroundImage };
+module.exports = { removeBackgroundImage };

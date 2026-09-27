@@ -23,6 +23,8 @@ async function handler(ctx) {
     );
 
     // Deteksi objek & hapus background otomatis (DeepAI background-remover).
+    // Tetap pakai DeepAI: Real-ESRGAN cuma model upscale, tidak punya
+    // model penghapus background.
     const cutoutBuffer = await removeBackgroundImage(buffer);
 
     // Bungkus hasil (PNG transparan) jadi stiker WebP 512x512.

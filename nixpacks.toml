@@ -1,0 +1,14 @@
+# Konfigurasi tambahan untuk build Nixpacks di Railway.
+#
+# Menambahkan paket Nix `realesrgan-ncnn-vulkan` (binary untuk .upscale &
+# .animehd, menggantikan DeepAI) beserta `mesa` (software Vulkan renderer /
+# lavapipe) supaya tetap bisa jalan di server tanpa GPU fisik.
+#
+# CATATAN: ncnn-vulkan tetap butuh device Vulkan yang valid. Software
+# rendering via Mesa jauh lebih lambat dari GPU asli, dan pada sebagian
+# environment container bisa saja tidak menemukan device sama sekali.
+# Kalau .upscale/.animehd gagal terus di Railway dengan pesan soal Vulkan,
+# jalankan bot itu di VPS dengan GPU/driver Vulkan yang jelas, atau kembali
+# pakai DeepAI untuk fitur tersebut.
+[phases.setup]
+nixPkgs = ["realesrgan-ncnn-vulkan", "mesa"]

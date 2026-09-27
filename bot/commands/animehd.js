@@ -1,5 +1,5 @@
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const { animeHdImage } = require('../lib/deepai');
+const { animeHdImage } = require('../lib/realesrgan');
 const { getTargetImage } = require('../lib/mediaTarget');
 
 async function handler(ctx) {
@@ -23,7 +23,7 @@ async function handler(ctx) {
 
     const resultBuffer = await animeHdImage(buffer);
 
-    await sock.sendMessage(jid, { image: resultBuffer, caption: '✅ Selesai jadi HD (waifu2x).' }, { quoted: msg });
+    await sock.sendMessage(jid, { image: resultBuffer, caption: '✅ Selesai jadi HD (Real-ESRGAN anime, lokal).' }, { quoted: msg });
     await ctx.reactOk();
   } catch (err) {
     console.error('[animehd] Gagal memproses:', err);
@@ -35,6 +35,6 @@ async function handler(ctx) {
 module.exports = {
   name: 'animehd',
   aliases: ['waifu2x', 'animeupscale'],
-  description: 'Perhalus & perbesar gambar ala-anime dengan pengurangan noise (DeepAI waifu2x). Kirim/reply gambar dengan .animehd',
+  description: 'Perhalus & perbesar gambar ala-anime (lokal, Real-ESRGAN anime model). Kirim/reply gambar dengan .animehd',
   handler,
 };
